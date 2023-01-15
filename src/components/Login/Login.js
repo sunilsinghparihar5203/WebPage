@@ -1,53 +1,83 @@
-import React, { useState,useEffect } from 'react';
+import React, { useState,useEffect,useReducer} from 'react';
 
 import Card from '../UI/Card/Card';
 import classes from './Login.module.css';
 import Button from '../UI/Button/Button';
 
+const EmailReducer = (state,action) => {
+  if(action.type === 'USER_INPUT'){
+    return  {value:action.val,isValid:action.val.includes('@')}
+  }
+  if(action.type === 'USER_BLUR'){
+    return  {value:state.value,isValid:state.value.includes('@')}
+  }
+
+  return  {value:'',isValid:false}
+};
+
+const PassReducer = (state,action) =>{
+  if(action.type === 'USER_INPUT'){
+    return {value:action.val,isValid:state.value.includes('@')}
+  }
+  if(action.type === 'USER_BLUR'){
+    return  {value:state.value,isValid:state.value.trim().length > 6}
+  }
+  return  {value:'',isValid:false}
+}
+
 const Login = (props) => {
-  const [enteredEmail, setEnteredEmail] = useState('');
-  const [emailIsValid, setEmailIsValid] = useState();
-  const [enteredPassword, setEnteredPassword] = useState('');
-  const [passwordIsValid, setPasswordIsValid] = useState();
-
-  const [enteredCollage, setCollageName] = useState('')
-  const [collageIsValid,setCollageIsValid] = useState()
-
+  // const [enteredEmail, setEnteredEmail] = useState('');
+  // const [emailIsValid, setEmailIsValid] = useState();
+  // const [enteredPassword, setEnteredPassword] = useState('');
+  // const [passwordIsValid, setPasswordIsValid] = useState();
   const [formIsValid, setFormIsValid] = useState(false);
 
-  useEffect(() => {
-    setFormIsValid(
-      enteredEmail.includes('@') && enteredPassword.trim().length > 6 && enteredCollage.trim().length > 0
-    );
-  }, [enteredEmail,enteredPassword,enteredCollage])
+  const [emailState, dispatchEmail] = useReducer(EmailReducer,{
+    value:'',isValid:false
+  })
+  const [passState, dispatchPass] = useReducer(PassReducer,{
+    value:'',isValid:false
+  })
+  // useEffect(() => {
+  //   const cleanUp = setTimeout(() => {
+  //       console.log("Checking validity")
+  //       setFormIsValid(
+  //         emailState.value.includes('@') && enteredPassword.trim().length > 6
+  //       );
+  //     }, 500);
+        
+  //   return ()=>{
+  //     console.log("clean UP")
+  //     clearTimeout(cleanUp)
+  //   }
+
+  // }, [emailState.value,enteredPassword])
 
   const emailChangeHandler = (event) => {
-    setEnteredEmail(event.target.value);
+    dispatchEmail({type:"USER_INPUT",val:event.target.value})
+    setFormIsValid(
+      emailState.isValid && passState.isValid
+    );
   };
 
   const passwordChangeHandler = (event) => {
-    setEnteredPassword(event.target.value);
+    dispatchPass({type:"USER_INPUT",val:event.target.value})
+    setFormIsValid(
+      emailState.isValid && passState.isValid
+    );
   };
-
-  const collageChangeHandler = (event)=>{
-    setCollageName(event.target.value);
-  }
   
   const validateEmailHandler = () => {
-    setEmailIsValid(enteredEmail.includes('@'));
+    dispatchEmail({type:"USER_BLUR"})
   };
 
   const validatePasswordHandler = () => {
-    setPasswordIsValid(enteredPassword.trim().length > 6);
-  };
-
-  const validCollageHandler = () => {
-    setCollageIsValid(enteredCollage.trim().length > 0);
+    dispatchPass({type:"USER_BLUR"})
   };
 
   const submitHandler = (event) => {
     event.preventDefault();
-    props.onLogin(enteredEmail, enteredPassword);
+    props.onLogin(emailState.value, passState.value);
   };
 
   return (
@@ -55,47 +85,33 @@ const Login = (props) => {
       <form onSubmit={submitHandler}>
         <div
           className={`${classes.control} ${
-            emailIsValid === false ? classes.invalid : ''
+            emailState.isValid === false ? classes.invalid : ''
           }`}
         >
           <label htmlFor="email">E-Mail</label>
           <input
             type="email"
             id="email"
-            value={enteredEmail}
+            value={emailState.value}
             onChange={emailChangeHandler}
             onBlur={validateEmailHandler}
           />
         </div>
         <div
           className={`${classes.control} ${
-            passwordIsValid === false ? classes.invalid : ''
+            passState.isValid === false ? classes.invalid : ''
           }`}
         >
           <label htmlFor="password">Password</label>
           <input
             type="password"
             id="password"
-            value={enteredPassword}
+            value={passState.value}
             onChange={passwordChangeHandler}
             onBlur={validatePasswordHandler}
           />
         </div>
 
-        <div
-          className={`${classes.control} ${
-            collageIsValid === false ? classes.invalid : ''
-          }`}
-        >
-          <label htmlFor="Collage">Collage Name</label>
-          <input
-            type="password"
-            id="collage"
-            value={enteredCollage}
-            onChange={collageChangeHandler}
-            onBlur={validCollageHandler}
-          />
-        </div>
         <div className={classes.actions}>
           <Button type="submit" className={classes.btn} disabled={!formIsValid}>
             Login
